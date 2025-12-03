@@ -1,17 +1,14 @@
 import { useState } from "react";
 import api from "../api";
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const { data } = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", data.token);
-      alert("Login Successful");
+      await api.post("/auth/forgot-password", { email });
+      alert("Reset link sent to email");
     } catch (err) {
       alert(err.response.data.message);
     }
@@ -19,11 +16,10 @@ export default function Login() {
 
   return (
     <div>
-      <h2>Login</h2>
+      <h2>Forgot Password</h2>
       <form onSubmit={handleSubmit}>
         <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-        <button>Login</button>
+        <button>Send Reset Link</button>
       </form>
     </div>
   );
