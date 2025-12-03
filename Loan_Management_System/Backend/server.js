@@ -1,87 +1,32 @@
-// server.js
-// ----------------------------------------------------
-// Starts the HTTP server, connects to the DB, and
-// attaches socket.io (for notifications).
-// ----------------------------------------------------
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";   // IMPORT ROUTES
+import pool from "./config/db.js";                 // OPTIONAL: to check DB connection
 
-require('dotenv').config(); // load .env early
+dotenv.config();
 
-const http = require('http');
-const app = require('./app');
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// NOTE: models/index.js should export { sequelize, Sequelize, ...models }
-// We'll try to require it; if it doesn't exist yet, server will still start.
-let sequelize;
-try {
-  // If you follow the typical pattern, models/index.js exports `sequelize`
-  // Example: module.exports = { sequelize, Sequelize, User, Loan, ... }
-  const models = require('./models');
-  sequelize = models.sequelize;
-} catch (err) {
-  console.warn('models/index.js not found or failed to load yet. DB connect skipped for now.');
-}
+// ROUTES
+app.use("/api/auth", authRoutes);
 
-// Notification socket initializer (created earlier)
-// This file should export { initSocket, createAndNotify, ... }
-let initSocket;
-try {
-  const notifService = require('./services/notificationService');
-  initSocket = notifService.initSocket;
-} catch (err) {
-  console.warn('services/notificationService.js not found or failed to load yet. Socket init skipped for now.');
-}
+// TEST ROUTE
+app.get("/", (req, res) => {
+  res.send("Server running...");
+});
+
+// OPTIONAL: Test DB connection
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.log("❌ Database Connection Failed:", err.message);
+  } else {
+    console.log("✅ Database Connected Successfully!");
+    connection.release();
+  }
+});
 
 const PORT = process.env.PORT || 5000;
-
-async function start() {
-  try {
-    // 1) Connect to DB (if sequelize is available)
-    if (sequelize) {
-      // Authenticate connection
-      await sequelize.authenticate();
-      console.log(' Database connected');
-
-      // DEV ONLY: sync models to DB automatically (creates tables)
-      // Comment out or remove in production — use migrations instead.
-      if (process.env.NODE_ENV !== 'production') {
-        await sequelize.sync({ alter: true });
-        console.log('Sequelize models synced (alter: true)');
-      }
-    }
-
-    // 2) Create HTTP server from Express app
-    const server = http.createServer(app);
-
-    // 3) Initialize socket.io for real-time notifications (if available)
-    if (typeof initSocket === 'function') {
-      initSocket(server);
-      console.log('Socket.io initialized for notifications');
-    } else {
-      console.log('ℹSocket.io NOT initialized (initSocket missing)');
-    }
-
-    // 4) Start listening
-    server.listen(PORT, () => {
-      console.log(` Server listening on http://localhost:${PORT} (env: ${process.env.NODE_ENV || 'development'})`);
-    });
-
-    // Optional: handle graceful shutdown
-    const shutdown = async () => {
-      console.log('Shutting down...');
-      server.close(() => console.log('HTTP server closed'));
-      if (sequelize) {
-        await sequelize.close();
-        console.log('DB connection closed');
-      }
-      process.exit(0);
-    };
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-
-  } catch (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-  }
-}
-
-start();
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
