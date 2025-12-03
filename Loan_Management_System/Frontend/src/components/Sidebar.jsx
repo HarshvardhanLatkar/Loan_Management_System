@@ -20,6 +20,10 @@ const Sidebar = () => {
           <FaUsers className="icon" /> Customer Management
         </NavLink>
 
+        <NavLink to="/loan-apply" className="menu-item">
+          <FaMoneyBillWave className="icon" /> Loan Application
+        </NavLink>
+
         <NavLink to="/pay-emi" className="menu-item">
           <FaMoneyBillWave className="icon" /> Pay EMI
         </NavLink>
